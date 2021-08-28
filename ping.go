@@ -15,7 +15,7 @@ import (
 
 const payload = "abcdefghijklmnopqrstuvwabcdefghi"
 
-func IcmpPing(address string, timeout int) (int, error) {
+func IcmpPing(address string, timeout int32) (int32, error) {
 	i := net.ParseIP(address)
 	if i == nil {
 		return 0, fmt.Errorf("unable to parse ip %s", address)
@@ -30,6 +30,10 @@ func IcmpPing(address string, timeout int) (int, error) {
 	}
 
 	f := os.NewFile(uintptr(fd), "dgram")
+	if err != nil {
+		return 0, errors.WithMessage(err, "create file from fd")
+	}
+
 	conn, err := net.FilePacketConn(f)
 	if err != nil {
 		return 0, errors.WithMessage(err, "create conn")
@@ -39,9 +43,9 @@ func IcmpPing(address string, timeout int) (int, error) {
 		_ = conn.Close()
 	}(conn)
 
-	start := time.Now().UnixMilli()
+	start := time.Now()
 	for seq := 1; timeout > 0; seq++ {
-		var sockTo int
+		var sockTo int32
 		if timeout > 1000 {
 			sockTo = 1000
 		} else {
@@ -89,8 +93,7 @@ func IcmpPing(address string, timeout int) (int, error) {
 			return 0, errors.WithMessage(err, "read icmp message")
 		}
 
-		delay := time.Now().UnixMilli() - start
-		return int(delay), nil
+		return int32(time.Since(start).Milliseconds()), nil
 	}
 
 	return -1, nil
