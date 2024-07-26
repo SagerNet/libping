@@ -79,10 +79,14 @@ func DialEcho(addr net.UDPAddr) (net.PacketConn, error) {
 	f := os.NewFile(uintptr(fd), "dgram")
 	conn, err := net.FilePacketConn(f)
 
+	// closing f does not affect conn & vice versa
+	// pkg.go.dev/net#FilePacketConn
+	// github.com/golang/net/blob/765c7e89b3/icmp/listen_posix.go#L90
+	f.Close()
+
 	if err != nil {
 		return nil, errors.WithMessage(err, "create icmp packet conn")
 	}
 
 	return conn, nil
-
 }
